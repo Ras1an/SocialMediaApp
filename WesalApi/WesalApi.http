@@ -1,0 +1,6 @@
+@Wesal_HostAddress = http://localhost:5139
+
+GET {{Wesal_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
