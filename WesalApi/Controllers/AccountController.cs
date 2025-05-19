@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Wesal.Controllers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Controllers;
 
@@ -42,7 +43,7 @@ public class AccountController : MainController
             
             if (createdAppUser.Succeeded)
             {
-                var roleResult = await _userManager.AddToRoleAsync(AppUser, "AppUser");
+                var roleResult = await _userManager.AddToRoleAsync(AppUser, "User");
                 if (roleResult.Succeeded)
                 {
                     return Ok(
@@ -100,6 +101,24 @@ public class AccountController : MainController
             Email = AppUser.Email,
             Token = _tokenService.CreateToken(AppUser)
         });
+    }
+
+
+
+    [Authorize]
+    [HttpPost("ResetPassword")]
+    public async Task<IActionResult> ResetPassword(string currentPassword, string newPassword)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        
+        var newUser = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+        if (!newUser.Succeeded)
+            return StatusCode(500, newUser.Errors);
+
+
+        return NoContent();
+
     }
 }
 

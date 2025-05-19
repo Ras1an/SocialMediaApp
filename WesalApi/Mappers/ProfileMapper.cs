@@ -10,10 +10,9 @@ namespace Wesal.Mappers
             return new Profile
             {
                 Name = profile.Name,
-                DateOfBirth = profile.DateOfBirth,
+                DateOfBirth = DateOnly.Parse(profile.DateOfBirth),
                 Bio = profile.Bio,
                 Gender = profile.Gender,
-                ProfilePictureLink  = profile.ProfilePictureLink,
                 CountryId = profile.CountryId,
                 CityId = profile.CityId,
 

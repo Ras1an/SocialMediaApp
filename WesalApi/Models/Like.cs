@@ -9,7 +9,7 @@ public partial class Like
 
     public int PostId { get; set; }
 
-    public int AppUserId { get; set; }
+    public string AppUserId { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

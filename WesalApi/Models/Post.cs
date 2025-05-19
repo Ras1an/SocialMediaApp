@@ -7,7 +7,7 @@ public partial class Post
 {
     public int PostId { get; set; }
 
-    public int AppUserId { get; set; }
+    public string AppUserId { get; set; }
 
     public string? PostText { get; set; }
 

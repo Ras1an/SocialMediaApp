@@ -3,5 +3,5 @@
 public class CreatePostDto
 {
     public string postText { get; set; }
-    public string? postPhotoLink { get; set; }
+    public IFormFile? Image { get; set; }
 }

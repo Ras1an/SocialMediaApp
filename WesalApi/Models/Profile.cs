@@ -7,11 +7,11 @@ public partial class Profile
 {
     public int ProfileId { get; set; }
 
-    public int AppUserId { get; set; }
+    public string AppUserId { get; set; }
 
     public string? Name { get; set; }
 
-    public DateOnly? DateOfBirth { get; set; }
+    public DateOnly DateOfBirth { get; set; }
 
     public string? Bio { get; set; }
 

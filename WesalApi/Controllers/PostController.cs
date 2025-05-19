@@ -12,6 +12,7 @@ using Wesal.Dtos.PostDto;
 using Api.Extensions;
 using Wesal.Interfaces;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Wesal.Controllers;
 
@@ -20,28 +21,83 @@ namespace Wesal.Controllers;
 public class PostController : MainController
 {
 
-    public PostController(UserManager<AppUser> userManager, IProfileRepository profileRepository) : base(userManager, profileRepository)
+    public PostController(UserManager<AppUser> userManager, IProfileRepository profileRepository, IWebHostEnvironment webHostEnvironment) : base(userManager, profileRepository, webHostEnvironment)
     {
 
     }
 
 
+
+    [Authorize]
+    [HttpGet("GetAllPosts")]
+    public async Task<IActionResult> GetAllPosts()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        var userId = user.Id;
+
+        var posts = await _profileRepo.GetAllPosts(userId);
+
+        if(!posts.Any())
+            return NotFound("No posts yet");
+
+
+        return Ok(posts);
+    }
+
+
+    [Authorize]
+    [HttpGet("GetAllUserPosts")]
+    public async Task<IActionResult> GetAllUserPosts(string userId)
+    {
+        var posts = await _profileRepo.GetAllPosts(userId);
+
+        if (!posts.Any())
+            return NotFound("No posts yet");
+
+
+        return Ok(posts);
+    }
+
+
+
     [Authorize]
     [HttpPost("CreatePost")]
-    public async Task<IActionResult> CreatePost(CreatePostDto _post)
+    public async Task<IActionResult> CreatePost([FromForm] CreatePostDto _post)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var username = User.GetUsername();
-        var appUser = await _userManager.FindByNameAsync(username);
-        var UserId = appUser.Id;
+        var user = await _userManager.GetUserAsync(User);
+
+
+        string imageUrl = "";
+        if (_post.Image != null && _post.Image.Length > 0)
+        {
+            var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(_post.Image.FileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await _post.Image.CopyToAsync(stream);
+            }
+
+
+            imageUrl = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+        }
+
+
+
+
 
         var post = new Post
         {
-            AppUserId = UserId,
+            AppUserId = user.Id,
             PostText = _post.postText,
-            PostPhoto = _post.postPhotoLink
+            PostPhoto = imageUrl
         };
 
         await _profileRepo.CreatePost(post);
@@ -106,6 +162,25 @@ public class PostController : MainController
 
 
     [Authorize]
+    [HttpGet("SearchPost")]
+    public async Task<IActionResult> SearchPost([FromQuery] string target, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        if (string.IsNullOrWhiteSpace(target))
+            return BadRequest("Search query required");
+
+        var posts = await _profileRepo.SearchPost(target, page, pageSize);
+
+        if (!posts.Any())
+            return NotFound("No Posts matched");
+
+
+
+        return Ok(posts);
+
+            
+    }
+
+    [Authorize]
     [HttpGet("GetPost")]
     public async Task<IActionResult> GetPost(int postId)
     {
@@ -122,12 +197,12 @@ public class PostController : MainController
 
     [Authorize]
     [HttpGet("GetTimeline")]
-    public async Task<IActionResult> GetTimeline()
+    public async Task<IActionResult> GetTimeline( int page = 1, int pageSize = 10)
     {
         var user = await _userManager.GetUserAsync(User);
         var userid = user.Id;
 
-        var posts = await _profileRepo.GetTimeline(userid);
+        var posts = await _profileRepo.GetTimeline(userid, page, pageSize);
 
 
         if(posts.Any())

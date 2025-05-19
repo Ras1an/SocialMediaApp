@@ -1,7 +1,6 @@
 using Api.Interfaces;
 using Api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +9,8 @@ using Wesal.Data;
 using Wesal.Interfaces;
 using Wesal.Models;
 using Wesal.Repository;
+using System.Text;
+using Microsoft.Extensions.FileProviders;
 
 namespace WesalApi
 {
@@ -19,19 +20,25 @@ namespace WesalApi
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Ensure configuration loads environment-specific appsettings
-            builder.Configuration
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables();
-
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            });
 
-            // Configure Swagger/OpenAPI
+
+
+
+
+
+
+      
+
+
+
+
+            // Swagger/OpenAPI configuration
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
@@ -60,7 +67,7 @@ namespace WesalApi
                 });
             });
 
-            // Configure DbContext with retry on failure
+            // DbContext configuration with retry on failure
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(
@@ -69,23 +76,16 @@ namespace WesalApi
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorNumbersToAdd: null));
-                options.EnableSensitiveDataLogging(); // Useful for debugging migrations
+                options.EnableSensitiveDataLogging(); // For debugging
                 options.EnableDetailedErrors();
             });
 
-            // Configure Identity
-            builder.Services.AddIdentity<AppUser, IdentityRole<int>>(options =>
-            {
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredLength = 8;
-            })
+            // Identity configuration
+            builder.Services.AddIdentity<AppUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
-            // Configure JWT Authentication
+            // JWT Authentication configuration
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme =
@@ -94,7 +94,7 @@ namespace WesalApi
                 options.DefaultScheme =
                 options.DefaultSignInScheme =
                 options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options => // Fixed typo: 'opetions' to 'options'
+            }).AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -104,40 +104,63 @@ namespace WesalApi
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(
-                        System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"]))
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SigningKey"])),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
                 };
             });
 
-            // Configure Authorization
+            // Authorization policies
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
             });
 
-            // Register Services
+            // Dependency Injection
             builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
             builder.Services.AddScoped<ITokenService, TokenService>();
 
-            // Configure JSON Serialization
-            builder.Services.AddControllers().AddNewtonsoftJson(options =>
+
+            builder.Services.AddCors(options =>
             {
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                options.AddPolicy("AllowFrontend",
+                    policy => policy.WithOrigins("http://127.0.0.1:3000"
+                    //http://192.168.137.1:8080/
+        )
+                                    .AllowAnyHeader()
+                                    .AllowAnyMethod());
             });
 
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            app.UseStaticFiles();
+
+            app.UseStaticFiles(new StaticFileOptions
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(builder.Environment.WebRootPath, "uploads")),
+                RequestPath = "/uploads"
+            });
+
+
+            app.UseCors("AllowFrontend");
+
+
+
+
+
+
+
+            // HTTP request pipeline
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
+            
 
             app.Run();
         }

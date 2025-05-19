@@ -9,7 +9,7 @@ public partial class Comment
 
     public int PostId { get; set; }
 
-    public int AppUserId { get; set; }
+    public string AppUserId { get; set; }
 
     public string? CommentText { get; set; }
 

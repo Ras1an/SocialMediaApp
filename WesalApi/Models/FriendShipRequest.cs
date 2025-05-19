@@ -7,9 +7,9 @@ public partial class FriendShipRequest
 {
     public int FriendShipRequestId { get; set; }
 
-    public int FromFriendId { get; set; }
+    public string FromFriendId { get; set; }
 
-    public int ToFriendId { get; set; }
+    public string ToFriendId { get; set; }
 
     public bool? IsAccepted { get; set; }
 
@@ -18,4 +18,5 @@ public partial class FriendShipRequest
     public virtual AppUser FromFriend { get; set; } = null!;
 
     public virtual AppUser ToFriend { get; set; } = null!;
+
 }
