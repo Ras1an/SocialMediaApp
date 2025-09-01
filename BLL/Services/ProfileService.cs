@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Azure.Core;
+using BLL.Interfaces;
 using BLL.Interfaces.Services;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,13 @@ namespace BLL.Services;
 public class ProfileService : IProfileService
 {
     private readonly IProfileRepository _profileRepo;
+    private readonly ILikeRepository _likeRepo;
     private readonly IMapper _mapper;
 
-    public ProfileService(IProfileRepository profileRepo, IMapper mapper)
+    public ProfileService(IProfileRepository profileRepo, ILikeRepository likeRepo, IMapper mapper)
     {
         _profileRepo = profileRepo;
+        _likeRepo = likeRepo;
         _mapper = mapper;
     }
 
@@ -50,6 +53,7 @@ public class ProfileService : IProfileService
     public async Task<ProfileDto> CreateProfileAsync(Wesal.Models.Profile profile)
     {
         //var profile = _mapper.Map<Wesal.Models.Profile>(profileDto);
+        //var profile = _mapper.Map<Wesal.Models.Profile>(profileDto);
         var created = await _profileRepo.CreateProfile(profile);
         return _mapper.Map<ProfileDto>(created);
     }
@@ -75,7 +79,7 @@ public class ProfileService : IProfileService
             ToFriendId = toFriendId
         };
 
-        var friendRequest = _profileRepo.SendFriendShipRequest(friendShipRequest);
+        var friendRequest = await _profileRepo.SendFriendShipRequest(friendShipRequest);
 
         return _mapper.Map<FriendRequestDto>(friendRequest);
     }
@@ -115,9 +119,16 @@ public class ProfileService : IProfileService
     }
     public async Task<List<PostDto>> GetTimelineAsync(string userId, int page, int pageSize) { 
         var posts = await _profileRepo.GetTimeline(userId, page, pageSize);
+        var mappedposts = _mapper.Map<List<PostDto>>(posts);
 
-        return _mapper.Map<List<PostDto>>(posts);
+        foreach (var post in mappedposts)
+        {
+            post.isLiked = await _likeRepo.IsLiked(userId, post.postId);
+        }
+
+        return mappedposts;
     }
+
     public async Task<List<CountryDto>> GetCountriesAsync() {  
         var countries = await _profileRepo.GetCountries();
 

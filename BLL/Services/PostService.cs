@@ -8,25 +8,35 @@ using Wesal.Dtos.PostDto;
 using Wesal.Models;
 using WesalApi.Interfaces;
 using AutoMapper;
+using BLL.Interfaces;
 namespace BLL.Services;
 
 public class PostService : IPostService
 {
     private readonly IPostRepository _postRepo;
+    private readonly ILikeRepository _likeRepo;
     private readonly IMapper _mapper;
 
-    public PostService(IPostRepository postRepo, IMapper mapper)
+    public PostService(IPostRepository postRepo, ILikeRepository likeRepo, IMapper mapper)
     {
         _postRepo = postRepo;
+        _likeRepo = likeRepo;
         _mapper = mapper;
     }
 
-    public async Task<List<PostDto>> GetAllPostsAsync(string userId)
+    public async Task<List<PostDto>> GetAllPostsAsync(string userId, string currentUserId)
     {
         var posts = await _postRepo.GetAllPosts(userId);
 
+        var mappedposts = _mapper.Map<List<PostDto>>(posts);
 
-        return _mapper.Map<List<PostDto>>(posts); 
+        foreach (var post in mappedposts)
+        {
+            post.isLiked = await _likeRepo.IsLiked(currentUserId, post.postId);
+        }
+
+        return mappedposts;
+
     }
 
     public async Task<PostDto> CreatePostAsync(PostDto postDto)
@@ -42,16 +52,20 @@ public class PostService : IPostService
         return _mapper.Map<PostDto>(post);
     }
 
-    public async Task<PostDto> UpdatePostAsync(int postId, string postText)
+    public async Task<(bool Success, string Message)> UpdatePostAsync(int postId, string userId, string postText)
     {
-        var updated = await _postRepo.UpdatePost(postId, postText);
-        return _mapper.Map<PostDto>(updated);
+        var post = await _postRepo.GetPost(postId);
+
+        if (post == null)
+            return (false, "Post not found");
+        if (post.AppUserId != userId)
+            return (false, "You are not authorized to delete that post!");
+
+        await _postRepo.UpdatePost(postId, postText);
+
+        return (true, "Post edited successfully.");
     }
 
-    public async Task DeletePostInfoAsync(int postId)
-    {
-        await _postRepo.DeletePostInfo(postId);
-    }
 
     public async Task<List<PostDto>> SearchPostAsync(string target, int page, int pageSize)
     {
@@ -61,10 +75,18 @@ public class PostService : IPostService
         return _mapper.Map<List<PostDto>>(posts);
     }
 
-    public async Task<PostDto> DeletePostAsync(PostDto postDto)
+    public async Task<(bool Success, string Message)> DeletePostAsync(int postId, string userId)
     {
-        var post = _mapper.Map<Post>(postDto);
-        var deleted = await _postRepo.DeletePost(post);
-        return _mapper.Map<PostDto>(deleted);
+        var post = await _postRepo.GetPost(postId);
+
+        if (post == null)
+            return (false, "Post not found");
+
+        if (post.AppUserId != userId)
+            return (false, "You are not authorized to delete that post!");
+
+        await _postRepo.DeletePost(postId);
+        return (true, "Post deleted successfully");
+
     }
 }

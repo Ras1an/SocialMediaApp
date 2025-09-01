@@ -1,4 +1,5 @@
 ﻿using BLL.Dtos.CommentDto;
+using BLL.Dtos.GetCommentDto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,9 @@ namespace BLL.Interfaces.Services;
 
 public interface ICommentService
 {
-    Task<CommentDto> CreateCommentAsync(CommentDto commentDto);
+    Task<GetCommentDto> CreateCommentAsync(CommentDto commentDto);
     Task<CommentDto> GetCommentAsync(int commentId);
+    Task<GetCommentDto> GetCommentForPostAsync(int commentId);
     Task<CommentDto> UpdateCommentAsync(int commentId, string commentText);
     Task<CommentDto> DeleteCommentAsync(int commentId);
 }

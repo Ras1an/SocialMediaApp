@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Wesal.Dtos.PostDto;
+using Wesal.Models;
 
 namespace BLL.Interfaces.Services;
 
 public interface IPostService
 {
-    Task<List<PostDto>> GetAllPostsAsync(string userId);
+    Task<List<PostDto>> GetAllPostsAsync(string userId, string currentUserId);
     Task<PostDto> CreatePostAsync(PostDto postDto);
     Task<PostDto> GetPostAsync(int postId);
-    Task<PostDto> UpdatePostAsync(int postId, string postText);
-    Task DeletePostInfoAsync(int postId);
+    Task<(bool Success, string Message)> UpdatePostAsync(int postId, string userId, string postText);
     Task<List<PostDto>> SearchPostAsync(string target, int page, int pageSize);
-    Task<PostDto> DeletePostAsync(PostDto postDto);
+    Task<(bool Success, string Message)> DeletePostAsync(int postId, string userId);
 }
 

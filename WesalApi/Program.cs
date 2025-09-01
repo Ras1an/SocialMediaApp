@@ -16,6 +16,8 @@ using WesalApi.Interfaces;
 using BLL.Mapper;
 using BLL.Services;
 using BLL.Interfaces.Services;
+using BLL.Interfaces;
+using DAL.Repository;
 
 
 namespace WesalApi
@@ -132,10 +134,12 @@ namespace WesalApi
             builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+            builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 
             builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<ILikeService, LikeService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
 
 

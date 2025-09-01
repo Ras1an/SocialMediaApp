@@ -9,6 +9,7 @@ using WesalApi.Dtos.CommentDto;
 using WesalApi.Interfaces;
 using AutoMapper;
 using BLL.Dtos.CommentDto;
+using BLL.Dtos.GetCommentDto;
 
 namespace BLL.Services;
 
@@ -23,17 +24,23 @@ public class CommentService : ICommentService
         _mapper = mapper;
     }
 
-    public async Task<CommentDto> CreateCommentAsync(CommentDto commentDto)
+    public async Task<GetCommentDto> CreateCommentAsync(CommentDto commentDto)
     {
         var comment = _mapper.Map<Comment>(commentDto);
         var created = await _commentRepo.CreateComment(comment);
-        return _mapper.Map<CommentDto>(created);
+        return _mapper.Map<GetCommentDto>(created);
     }
 
     public async Task<CommentDto> GetCommentAsync(int commentId)
     {
         var comment = await _commentRepo.GetComment(commentId);
         return _mapper.Map<CommentDto>(comment);
+    }
+
+    public async Task<GetCommentDto> GetCommentForPostAsync(int commentId)
+    {
+        var comment = await _commentRepo.GetComment(commentId);
+        return _mapper.Map<GetCommentDto>(comment);
     }
 
     public async Task<CommentDto> UpdateCommentAsync(int commentId, string commentText)

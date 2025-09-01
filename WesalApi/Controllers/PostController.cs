@@ -40,7 +40,7 @@ public class PostController : MainController
         var user = await _userManager.GetUserAsync(User);
         var userId = user.Id;
 
-        var posts = await _postService.GetAllPostsAsync(userId);
+        var posts = await _postService.GetAllPostsAsync(userId, userId);
 
         if(!posts.Any())
             return NotFound("No posts yet");
@@ -54,7 +54,10 @@ public class PostController : MainController
     [HttpGet("GetAllUserPosts")]
     public async Task<IActionResult> GetAllUserPosts(string userId)
     {
-        var posts = await _postService.GetAllPostsAsync(userId);
+        var user = await _userManager.GetUserAsync(User);
+   
+
+        var posts = await _postService.GetAllPostsAsync(userId, user.Id);
 
         if (!posts.Any())
             return NotFound("No posts yet");
@@ -110,45 +113,30 @@ public class PostController : MainController
         
         };
 
-        await _postService.CreatePostAsync(post);
+        var createdPost = await _postService.CreatePostAsync(post);
 
-        return Ok("Post Created");
+        return Ok(createdPost);
     }
 
 
     [Authorize]
     [HttpPut("UpdatePost")]
-    public async Task<IActionResult> UpdatePost(int postId, string _postText)
+    public async Task<IActionResult> UpdatePost(int postId, [FromBody] string postText)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-
-        if (_postText == null)
+        if (postText == null)
             return BadRequest();
 
-        var username = User.GetUsername();
-        var appUser = await _userManager.FindByNameAsync(username);
-        var userId = appUser.Id;
-
-
-        if (string.IsNullOrEmpty(userId.ToString()))
-            return Unauthorized("Post not found");
-
-        var post = await _postService.GetPostAsync(postId);
-
-        if (post is null)
-            return NotFound("Post not found");
-
-        if (post.user.Id != userId)
-            return NotFound("You do not have permission to edit it");
-
-
-        await _postService.UpdatePostAsync(post.postId, _postText);
-
-        return Ok("Post Updated");
+        var user = await _userManager.GetUserAsync(User);
+        var userId = user.Id;
 
 
 
+        var result = await _postService.UpdatePostAsync(postId, userId, postText);
+
+        if(!result.Success)
+            return BadRequest(result.Message);
+
+        return Ok(result.Message);
     }
 
     [Authorize]
@@ -157,17 +145,15 @@ public class PostController : MainController
     {
        // var user = await _userManager.GetUserAsync(User);
         //var userId = user.Id;
-        var userId = _userManager.GetUserId(User);
+        var user = await _userManager.GetUserAsync(User);
+        var userId = user.Id;
+        
+        var result = await _postService.DeletePostAsync(postId, userId);
 
+        if(!result.Success)
+            return BadRequest(result.Message);
 
-        var post = await _postService.GetPostAsync(postId);
-
-        if (post == null || post.user.Id.ToString() != userId)
-            return NotFound("Post not found or you are not authorized to access it.");
-
-        await _postService.DeletePostAsync(post);
-
-        return Ok("Post Deleted");
+        return Ok(result.Message);
     }
 
 

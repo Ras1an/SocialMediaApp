@@ -65,10 +65,15 @@ public class ProfileRepository : IProfileRepository
         return _profile;
     }
 
+    private async Task<List<string>> GetAllFriendIds(string userId)
+    {
+        var friendsIds = await _context.FriendShipRequests.Where(f => f.IsAccepted && (f.ToFriendId == userId || f.FromFriendId == userId)).Select(f => f.FromFriendId == userId ? f.ToFriendId : f.FromFriendId).Distinct().ToListAsync();
 
+        return friendsIds;
+    }
     public async Task<List<Profile>> GetAllFriend(string userId)
     {
-        var friendsIds = await _context.FriendShipRequests.Where(f => f.IsAccepted == true && (f.ToFriendId == userId || f.FromFriendId == userId)).Select(f => f.FromFriendId == userId ? f.ToFriendId : f.FromFriendId).Distinct().ToListAsync();
+        var friendsIds = await GetAllFriendIds(userId);
 
 
         var friends = await _context.Profiles.Where(p => friendsIds.Contains(p.AppUserId)).ToListAsync();
@@ -81,7 +86,7 @@ public class ProfileRepository : IProfileRepository
     public async Task<List<FriendShipRequest>> GetAllFriendRequests(string userId)
     {
 
-        var friendRequests = await _context.FriendShipRequests.Include(f => f.FromFriend).ThenInclude(FromFriend => FromFriend.Profiles).Where(f => f.IsAccepted == false && f.ToFriendId == userId).ToListAsync();
+        var friendRequests = await _context.FriendShipRequests.Include(f => f.FromFriend).ThenInclude(FromFriend => FromFriend.Profiles).Where(f => f.IsAccepted == false && f.ToFriendId == userId).OrderByDescending(f => f.RequestedAt).ToListAsync();
 
         return friendRequests;
 
@@ -137,7 +142,7 @@ public class ProfileRepository : IProfileRepository
 
     public async Task<FriendShipRequest> SendFriendShipRequest(FriendShipRequest friendShipRequest)
     {
-        await _context.AddAsync(friendShipRequest);
+        await _context.FriendShipRequests.AddAsync(friendShipRequest);
         await _context.SaveChangesAsync();
 
         return friendShipRequest;
@@ -154,7 +159,7 @@ public class ProfileRepository : IProfileRepository
 
     public async Task<List<FriendShipRequest>> GetFriendShipRequests(string userId)
     {
-        var friendShips = await _context.FriendShipRequests.Where(f => f.ToFriendId == userId).ToListAsync();
+        var friendShips = await _context.FriendShipRequests.Where(f => f.ToFriendId == userId).OrderByDescending(f => f.RequestedAt).ToListAsync();
 
         return friendShips;
 
@@ -169,20 +174,30 @@ public class ProfileRepository : IProfileRepository
         return friendship;
     }
 
+    //private async Task ScoreFunction()
+    //{
+    //    var friendsIds = await GetAllFriendIds(userId);
+    //    friendsIds.Add(userId); // include current user
 
+    //    var posts = await _context.Posts.Where(p => friendsIds.Contains(p.AppUserId)).Select(p => new
+    //    {
+    //        Post = p,
+    //        Score = (p.CreatedAt > DateTime.UtcNow.AddHours(-24)? 50 : 0) + 
+    //                 (p.Likes.Count * 2) + 
+    //                 (p.Comments.Count * 2)
+    //    });
+
+    //    return null;
+    //}
     public async Task<List<Post>> GetTimeline(string userId, int page, int pageSize)
     {
-        var friendsIds = await _context.FriendShipRequests.Where(f => f.IsAccepted == true && (f.ToFriendId == userId || f.FromFriendId == userId)).Select(f => f.FromFriendId == userId ? f.ToFriendId : f.FromFriendId).Distinct().ToListAsync();
+        var friendsIds = await GetAllFriendIds(userId);
+        friendsIds.Add(userId); // include current user
 
-        friendsIds.Add(userId);
 
 
-        // we should include the image of the user
-        var posts = await _context.Posts.Where(p => friendsIds.Contains(p.AppUserId)).OrderByDescending(p => Guid.NewGuid()).Skip((page - 1) * pageSize).Take(pageSize).Include(p => p.Comments).ThenInclude(c => c.AppUser.Profiles).Include(p => p.Likes).ThenInclude(l => l.AppUser.Profiles).Include(p => p.AppUser.Profiles).ToListAsync();
+        var posts = await _context.Posts.Where(p => friendsIds.Contains(p.AppUserId)).OrderByDescending(p => p.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).Include(p => p.Comments).ThenInclude(c => c.AppUser.Profiles).Include(p => p.Likes).ThenInclude(l => l.AppUser.Profiles).Include(p => p.AppUser.Profiles).ToListAsync();
 
-        //.Where(p => friendsIds.Contains(userId)).ToListAsync();
-
-        //.Include(p=> p.Likes).OrderByDescending(p => p.CreatedAt).ToListAsync(); 
 
         return posts;
     }

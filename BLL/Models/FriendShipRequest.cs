@@ -11,7 +11,7 @@ public partial class FriendShipRequest
 
     public string ToFriendId { get; set; }
 
-    public bool? IsAccepted { get; set; }
+    public bool IsAccepted { get; set; }
 
     public DateTime? RequestedAt { get; set; }
 

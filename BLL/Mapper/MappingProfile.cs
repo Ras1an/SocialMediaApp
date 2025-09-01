@@ -22,7 +22,7 @@ public class MappingProfile : AutoMapper.Profile
     {
         CreateMap<AppUser, UserDto>().ForMember(des => des.Id, opt => opt.MapFrom(src => src.Id)).ForMember(des => des.Name, opt => opt.MapFrom(src => src.Profiles.FirstOrDefault().Name)).ForMember(des => des.photoLink, opt => opt.MapFrom(src => src.Profiles.FirstOrDefault().ProfilePictureLink)).ReverseMap();
         CreateMap<Like, LikeDto>().ForMember(des => des.user, opt => opt.MapFrom(src => src.AppUser)).ReverseMap();
-        CreateMap<Post, PostDto>().ForMember(des => des.user, opt => opt.MapFrom(src => src.AppUser)).ReverseMap();
+        CreateMap<Post, PostDto>().ForMember(des => des.user, opt => opt.MapFrom(src => src.AppUser)).ReverseMap().ForMember(dest => dest.AppUserId, opt => opt.MapFrom(src => src.user.Id)).ForMember(dest => dest.AppUser, opt => opt.Ignore());
         CreateMap<Comment, CreateCommentDto>().ReverseMap();
         CreateMap<Comment, GetCommentDto>().ForMember(des => des.user, opt => opt.MapFrom(src => src.AppUser)).ReverseMap();
         CreateMap<Comment, CommentDto>().ReverseMap();

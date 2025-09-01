@@ -20,7 +20,6 @@ public interface IProfileRepository
     Task<List<Profile>> SuggestFriends(string userId);
 
 
-
     Task<List<Post>> GetTimeline(string userId, int page, int pageSize);
 
     Task<List<Country>> GetCountries();

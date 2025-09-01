@@ -49,7 +49,7 @@ public class AccountController : MainController
                     return Ok(
                             new NewUserDto
                             {
-                                Username = AppUser.UserName,
+                                AppUserId = AppUser.Id,
                                 Email = AppUser.Email,
                                 Token = _tokenService.CreateToken(AppUser)
 
@@ -97,7 +97,7 @@ public class AccountController : MainController
 
         return Ok(new NewUserDto
         {
-            Username = AppUser.UserName,
+            AppUserId = AppUser.Id,
             Email = AppUser.Email,
             Token = _tokenService.CreateToken(AppUser)
         });

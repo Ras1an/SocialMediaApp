@@ -36,6 +36,19 @@ public class CommentController : MainController
 
     }
 
+    [Authorize]
+    [HttpGet("GetCommentForPost")]
+    public async Task<IActionResult> GetCommentForPost(int commentId)
+    {
+        var comment = await _commentService.GetCommentForPostAsync(commentId);
+
+        if (comment == null)
+            return NotFound("Comment not found");
+
+        return Ok(comment);
+
+    }
+
 
 
     [Authorize]
@@ -107,11 +120,9 @@ public class CommentController : MainController
 
 
     [Authorize]
-    [HttpDelete("DeleteComment/{commendId}")]
+    [HttpDelete("DeleteComment")]
     public async Task<IActionResult> DeleteComment(int commentId)
     {
-
-
         var user = await _userManager.GetUserAsync(User);
         var userId = user.Id;
 

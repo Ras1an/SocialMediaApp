@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Wesal.Data;
 using Wesal.Dtos.PostDto;
 using Wesal.Models;
@@ -19,7 +20,9 @@ public class PostRepository : IPostRepository
 
     public async Task<List<Post>> GetAllPosts(string userId)
     {
-        var posts = await _context.Posts.Where(p => p.AppUserId == userId).AsNoTracking().OrderByDescending(p => p.CreatedAt).ToListAsync();
+
+
+        var posts = await _context.Posts.Where(p => p.AppUserId == userId).Include(p => p.AppUser.Profiles).Include(p => p.Comments).ThenInclude(c => c.AppUser.Profiles).Include(p => p.Likes).ThenInclude(l => l.AppUser.Profiles).AsNoTracking().OrderByDescending(p => p.CreatedAt).ToListAsync();
 
         return posts;
     }
@@ -29,41 +32,35 @@ public class PostRepository : IPostRepository
     {
         await _context.Posts.AddAsync(post);
         await _context.SaveChangesAsync();
-        return post;
+
+        var newPost = await GetPost(post.PostId);
+
+        return newPost;
     }
 
-    public async Task<Post> GetPost(int postId)
+    public async Task<Post?> GetPost(int postId)
     {
         return await _context.Posts.Include(p => p.AppUser.Profiles).Include(p => p.Comments).ThenInclude(c => c.AppUser.Profiles).Include(p => p.Likes).ThenInclude(l => l.AppUser.Profiles).FirstOrDefaultAsync(p => p.PostId == postId);
 
     }
 
-    public async Task<Post> UpdatePost(int postId, string postText)
+    public async Task UpdatePost(int postId, string postText)
     {
         var post = await _context.Posts.FirstOrDefaultAsync(p => p.PostId == postId);
 
         post.PostText = postText;
 
         await _context.SaveChangesAsync();
-        return post;
     }
 
 
-    public async Task DeletePostInfo(int _postId)
+
+    public async Task DeletePost(int postId)
     {
-        var likes = await _context.Likes.Where(l => l.PostId == _postId).ExecuteDeleteAsync();
-        await _context.SaveChangesAsync();
-
-    }
-
-    public async Task<Post> DeletePost(Post _post)
-    {
-        await DeletePostInfo(_post.PostId);
-
-        var post = _context.Posts.Remove(_post);
-        await _context.SaveChangesAsync();
-
-        return _post;
+        await _context.Likes.Where(l => l.PostId == postId).ExecuteDeleteAsync();
+        await _context.Comments.Where(c => c.PostId == postId).ExecuteDeleteAsync();
+        await _context.Posts.Where(p => p.PostId == postId).ExecuteDeleteAsync();
+      
     }
     public async Task<List<Post>> SearchPost(string target, int page, int pageSize)
     {

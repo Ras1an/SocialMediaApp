@@ -20,7 +20,10 @@ public class CommentRepository : ICommentRepository
     {
         await _context.Comments.AddAsync(comment);
         await _context.SaveChangesAsync();
-        return comment;
+
+        var newComment = await _context.Comments.Include(c => c.AppUser.Profiles).FirstOrDefaultAsync(c => c.CommentId == comment.CommentId);
+
+        return newComment;
     }
 
     public async Task<Comment> GetComment(int commentId)
