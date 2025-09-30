@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using BLL.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,10 @@ namespace WesalApi.Controllers;
 [ApiController]
 public class SearchController : MainController
 {
-    private readonly IProfileRepository _profileRepo;
-    public SearchController(UserManager<AppUser> userManager, IProfileRepository profileRepository) : base(userManager)
+    private readonly ISearchService _searchService;
+    public SearchController(UserManager<AppUser> userManager, ISearchService searchService) : base(userManager)
     {
-        _profileRepo = profileRepository;
+        _searchService = searchService;
     }
 
 
@@ -25,6 +26,40 @@ public class SearchController : MainController
     //{
 
     //}
+
+    [Authorize]
+    [HttpGet("SearchPostsAndUsers")]
+    public async Task<IActionResult> SearchPostsAndUsers(string targert, int page, int pageSize)
+    {
+        var user = await _userManager.GetUserAsync(User);
+
+        var searchResult = await _searchService.SearchPostsAndUsersAsync(user.Id,targert, page, pageSize);
+        return Ok(searchResult);
+    }
+
+
+    [Authorize]
+    [HttpGet("SearchPosts")]
+    public async Task<IActionResult> SearchPosts(string targert, int page, int pageSize)
+    {
+        var user = await _userManager.GetUserAsync(User);
+
+        var posts = await _searchService.SearchPostsAsync(user.Id, targert, page, pageSize);
+        return Ok(posts);
+    }
+
+
+
+    [Authorize]
+    [HttpGet("SearchUsers")]
+    public async Task<IActionResult> SearchUsers(string targert, int page, int pageSize)
+    {
+
+        var users = await _searchService.SearchUsersAsync(targert, page, pageSize);
+        return Ok(users);
+    }
+
+
 
 
 

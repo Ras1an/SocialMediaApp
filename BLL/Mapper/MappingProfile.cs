@@ -10,6 +10,7 @@ using BLL.Dtos.LikeDto;
 using Wesal.Dtos.PostDto;
 using Wesal.Models;
 using WesalApi.Dtos.CommentDto;
+using WesalApi.Dtos.CountryDto;
 using WesalApi.Dtos.FriendRquestDto;
 using WesalApi.Dtos.ProfileDto;
 using WesalApi.Dtos.UserDto;
@@ -27,7 +28,10 @@ public class MappingProfile : AutoMapper.Profile
         CreateMap<Comment, GetCommentDto>().ForMember(des => des.user, opt => opt.MapFrom(src => src.AppUser)).ReverseMap();
         CreateMap<Comment, CommentDto>().ReverseMap();
         CreateMap<Wesal.Models.Profile, ProfileDto>().ReverseMap();
-        CreateMap<FriendShipRequest, FriendRequestDto>().ReverseMap();
+        CreateMap<FriendshipRequest, FriendRequestDto>().ReverseMap();
+        CreateMap<Wesal.Models.Profile, UserDto>().ForMember(des => des.Id, opt => opt.MapFrom(src => src.AppUserId)).ForMember(des => des.photoLink, opt => opt.MapFrom(src => src.ProfilePictureLink)).ReverseMap();
+        CreateMap<Country, CountryDto>().ReverseMap();
+        CreateMap<City, CityDto>().ReverseMap();
         // add other mappings here
     }
 }

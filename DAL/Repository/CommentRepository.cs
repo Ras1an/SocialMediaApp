@@ -57,6 +57,21 @@ public class CommentRepository : ICommentRepository
 
 
 
+    public async Task<Dictionary <int, int>> GetCommentsCount(List<int> postIds)
+    {
+        return await _context.Comments.Where(c => postIds.Contains(c.PostId))
+                    .GroupBy(c => c.PostId).Select(g => new
+                    {
+                        postId = g.Key,
+                        count = g.Count()
+                    }).ToDictionaryAsync(g => g.postId, g => g.count);
 
+    }
+
+
+    public async Task<List<Comment>> GetPostComments(int postId, int page, int pageSize)
+    {
+        return await _context.Comments.Where(c => c.PostId == postId).OrderByDescending(c => c.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).Include(c => c.AppUser.Profiles).ToListAsync();
+    }
 
 }

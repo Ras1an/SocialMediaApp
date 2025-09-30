@@ -54,5 +54,15 @@ namespace WesalApi.Controllers
 
 
         }
+
+        [Authorize]
+        [HttpGet("GetPostLikes")]
+        public async Task<IActionResult> GetPostLikes(int postId, int page, int pageSize)
+        {
+            var likes = await _likeService.GetPostLikesAsync(postId, page, pageSize);
+
+            return Ok(likes);
+
+        }
     }
 }

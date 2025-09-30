@@ -170,10 +170,10 @@ namespace WesalApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FriendShipRequests",
+                name: "FriendshipRequests",
                 columns: table => new
                 {
-                    FriendShipRequestId = table.Column<int>(type: "int", nullable: false)
+                    FriendshipRequestId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FromFriendId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ToFriendId = table.Column<string>(type: "nvarchar(450)", nullable: false),
@@ -182,14 +182,14 @@ namespace WesalApi.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FriendShipRequests", x => x.FriendShipRequestId);
+                    table.PrimaryKey("PK_FriendshipRequests", x => x.FriendshipRequestId);
                     table.ForeignKey(
-                        name: "FK_FriendShipRequests_AspNetUsers_FromFriendId",
+                        name: "FK_FriendshipRequests_AspNetUsers_FromFriendId",
                         column: x => x.FromFriendId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_FriendShipRequests_AspNetUsers_ToFriendId",
+                        name: "FK_FriendshipRequests_AspNetUsers_ToFriendId",
                         column: x => x.ToFriendId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
@@ -376,13 +376,13 @@ namespace WesalApi.Migrations
                 column: "PostId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FriendShipRequests_FromFriendId",
-                table: "FriendShipRequests",
+                name: "IX_FriendshipRequests_FromFriendId",
+                table: "FriendshipRequests",
                 column: "FromFriendId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FriendShipRequests_ToFriendId",
-                table: "FriendShipRequests",
+                name: "IX_FriendshipRequests_ToFriendId",
+                table: "FriendshipRequests",
                 column: "ToFriendId");
 
             migrationBuilder.CreateIndex(
@@ -438,7 +438,7 @@ namespace WesalApi.Migrations
                 name: "Comments");
 
             migrationBuilder.DropTable(
-                name: "FriendShipRequests");
+                name: "FriendshipRequests");
 
             migrationBuilder.DropTable(
                 name: "Likes");

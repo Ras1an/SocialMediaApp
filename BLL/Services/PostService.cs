@@ -15,12 +15,14 @@ public class PostService : IPostService
 {
     private readonly IPostRepository _postRepo;
     private readonly ILikeRepository _likeRepo;
+    private readonly ICommentRepository _commentRepo;
     private readonly IMapper _mapper;
 
-    public PostService(IPostRepository postRepo, ILikeRepository likeRepo, IMapper mapper)
+    public PostService(IPostRepository postRepo, ILikeRepository likeRepo, ICommentRepository commentRepo, IMapper mapper)
     {
         _postRepo = postRepo;
         _likeRepo = likeRepo;
+        _commentRepo = commentRepo;
         _mapper = mapper;
     }
 
@@ -30,9 +32,17 @@ public class PostService : IPostService
 
         var mappedposts = _mapper.Map<List<PostDto>>(posts);
 
+        var postIds = mappedposts.Select(p => p.postId).ToList();
+
+        var likedPosts = await _likeRepo.IsLiked(userId, postIds);
+        var likesCount = await _likeRepo.GetLikesCounts(postIds);
+        var commentsCount = await _commentRepo.GetCommentsCount(postIds);
+
         foreach (var post in mappedposts)
         {
-            post.isLiked = await _likeRepo.IsLiked(currentUserId, post.postId);
+            post.likesCount = likesCount.TryGetValue(post.postId, out var lc) ? lc : 0;
+            post.commentsCount = commentsCount.TryGetValue(post.postId, out var cc) ? cc : 0;
+            post.isLiked = likedPosts.Contains(post.postId);
         }
 
         return mappedposts;

@@ -47,9 +47,21 @@ namespace DAL.Repository
 
 
 
-        public async Task<bool> IsLiked(string userId, int postId)
+        public async Task<List<int>> IsLiked(string userId, List<int> postIds)
         {
-            return await _context.Likes.AnyAsync(l => l.AppUserId == userId && l.PostId == postId);
+            return await _context.Likes.Where(l => postIds.Contains(l.PostId) && l.AppUserId == userId).Select(l => l.PostId).ToListAsync();
+        }
+
+        public async Task<Dictionary<int, int>> GetLikesCounts(List<int> postIds)
+        {
+            return await _context.Likes.Where(l => postIds.Contains(l.PostId))
+                .GroupBy(l => l.PostId).Select(g => new {postId = g.Key, count = g.Count() })
+                .ToDictionaryAsync(x => x.postId, x => x.count);
+        }
+
+        public Task<List<Like>> GetPostLikesAsync(int postId, int page, int pageSize)
+        {
+            return _context.Likes.Where(l => l.PostId == postId).Skip((page - 1) * pageSize).Take(pageSize).Include(l => l.AppUser.Profiles).ToListAsync();
         }
     }
 }

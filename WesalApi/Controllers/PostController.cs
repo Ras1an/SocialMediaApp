@@ -42,10 +42,7 @@ public class PostController : MainController
 
         var posts = await _postService.GetAllPostsAsync(userId, userId);
 
-        if(!posts.Any())
-            return NotFound("No posts yet");
-
-
+        
         return Ok(posts);
     }
 
@@ -58,9 +55,6 @@ public class PostController : MainController
    
 
         var posts = await _postService.GetAllPostsAsync(userId, user.Id);
-
-        if (!posts.Any())
-            return NotFound("No posts yet");
 
 
         return Ok(posts);
@@ -138,6 +132,7 @@ public class PostController : MainController
 
         return Ok(result.Message);
     }
+
 
     [Authorize]
     [HttpDelete("DeletePost")]

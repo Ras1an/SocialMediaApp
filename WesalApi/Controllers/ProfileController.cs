@@ -11,6 +11,7 @@ using Wesal.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using BLL.Interfaces.Services;
+using WesalApi.Dtos.ProfileDto;
 
 namespace Wesal.Controllers;
 
@@ -27,27 +28,21 @@ public class ProfileController : MainController
         _webHostEnvironment = webHostEnvironment;
     }
 
-    //my profile
-    [Authorize]
-    [HttpGet("GetProfile")]
-    public async Task<IActionResult> GetProfile()
-    {
-        var user = await _userManager.GetUserAsync(User);
-
-        
-        var profile = await _profileService.GetProfileAsync(user.Id);
-
-        return Ok(profile);
-    }
 
 
     // any user profile
     [Authorize]
-    [HttpGet("GetUserProfile")]
-    public async Task<IActionResult> GetUserProfile(string userId)
+    [HttpGet("GetProfile")]
+    public async Task<IActionResult> GetProfile(string? userId)
     {
-        var profile = await _profileService.GetProfileAsync(userId);
+        var currentUser = await _userManager.GetUserAsync(User);
 
+        var targetUserId = string.IsNullOrEmpty(userId) ? currentUser.Id : userId;
+
+        var  profile = await _profileService.GetProfileAsync(currentUser.Id, targetUserId);
+
+        if(profile == null)
+            return NotFound();
 
         return Ok(profile);
     }
@@ -64,6 +59,10 @@ public class ProfileController : MainController
 
         if (user == null)
             return Unauthorized("User not found.");
+
+        var hasAProfile = await _profileService.GetProfileAsync(user.Id, user.Id);
+        if(hasAProfile != null)
+            return BadRequest(new { Message = "You already have a profile!"});
 
         string imageUrl = "";
         if (profile.Image != null && profile.Image.Length > 0)
@@ -102,6 +101,34 @@ public class ProfileController : MainController
     }
 
 
+    [Authorize]
+    [HttpPut("ChangeName")]
+    public async Task<IActionResult> ChangeName([FromBody] string name)
+    {
+
+        var user = await _userManager.GetUserAsync(User);
+        var userId = user.Id;
+
+        var success = await _profileService.ChangeNameAsync(userId, name);
+        if (success)
+            return Ok(new { message = "Profile Name Changed Successfully"});
+
+        return BadRequest(new { message = "Something went wrong" });
+    }
+
+    [Authorize]
+    [HttpGet("GetTimelineRelevent")]
+    public async Task<IActionResult> GetTimelineRelevent(int page = 1, int pageSize = 10)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        var userId = user.Id;
+
+        var posts = await _profileService.GetTimelineReleventAsync(userId, page, pageSize);
+
+       return Ok(posts);
+    }
+
+
 
     [Authorize]
     [HttpGet("GetTimeline")]
@@ -113,14 +140,24 @@ public class ProfileController : MainController
         var posts = await _profileService.GetTimelineAsync(userid, page, pageSize);
 
 
-        if (posts.Any())
-            return Ok(posts);
+        return Ok(posts);
 
-        return NotFound("No Posts");
     }
 
 
+    [Authorize]
+    [HttpGet("GetRandomTimeline")]
+    public async Task<IActionResult> GetRandomTimeline(int pageSize = 10)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        var userid = user.Id;
 
+        var posts = await _profileService.GetRandomTimelineAsync(userid, pageSize);
+
+
+        return Ok(posts);
+
+    }
 
 
 
@@ -241,9 +278,6 @@ public class ProfileController : MainController
 
         var friends = await _profileService.GetAllFriendRequestsAsync(user.Id);
 
-        if (!friends.Any())
-            return NotFound("No Friends Yet!");
-
 
 
         return Ok(friends);
@@ -269,19 +303,19 @@ public class ProfileController : MainController
 
 
     [Authorize]
-    [HttpPost("SendFriendShipRequest/{toUserId}")]
-    public async Task<IActionResult> SendFriendShipRequest(string ToUserId)
+    [HttpPost("SendFriendshipRequest/{toUserId}")]
+    public async Task<IActionResult> SendFriendshipRequest(string ToUserId)
     {
         var user = await _userManager.GetUserAsync(User);
         var FromUserId = user.Id;
 
-        if(await _profileService.GetProfileAsync(ToUserId) ==null)
+        if (await _profileService.GetProfileAsync(ToUserId, ToUserId) == null)
             return BadRequest("There is no user with that ID");
 
-        
-        var friendShipRequest = await _profileService.SendFriendRequestAsync(FromUserId, ToUserId);
 
-        return Ok(friendShipRequest);
+        var friendshipRequest = await _profileService.SendFriendRequestAsync(FromUserId, ToUserId);
+
+        return Ok(friendshipRequest);
     }
 
 
@@ -297,35 +331,10 @@ public class ProfileController : MainController
     //    if (friendships == null)
     //        return NotFound("No friend Requests found");
 
-    //    return Ok(friendships); 
+    //    return Ok(friendships);
     //}
 
 
-
-    [Authorize]
-    [HttpPut("ِAcceptFriendRequest/{friendshipId}")]
-    public async Task<IActionResult> AcceptFriendRequest(int friendshipId)
-    {
-        var user = await _userManager.GetUserAsync(User);
-        var userId = user.Id;
-
-        var friendship = await _profileService.GetFriendRequestAsync(friendshipId);
-
-        if (friendship == null)
-            return NotFound("Friend request not found");
-        
-
-
-        try{
-            var updatedFriendship = await _profileService.HandleFriendRequestAsync(friendshipId, true);
-            return Ok();
-        }
-
-        catch (Exception ex)
-        {
-            return BadRequest("Failed to handel friend request");
-        }
-    }
 
 
     [Authorize]

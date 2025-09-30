@@ -17,4 +17,5 @@ public interface ICommentService
     Task<GetCommentDto> GetCommentForPostAsync(int commentId);
     Task<CommentDto> UpdateCommentAsync(int commentId, string commentText);
     Task<CommentDto> DeleteCommentAsync(int commentId);
+    Task<List<GetCommentDto>> GetPostCommentsAsync(int postId, int page, int pageSize);
 }

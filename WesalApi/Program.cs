@@ -18,6 +18,9 @@ using BLL.Services;
 using BLL.Interfaces.Services;
 using BLL.Interfaces;
 using DAL.Repository;
+using WesalApi.EmailService;
+using BLL.Interfaces.EmailService;
+
 
 
 namespace WesalApi
@@ -34,13 +37,6 @@ namespace WesalApi
                 options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             });
 
-
-
-
-
-
-
-      
 
 
 
@@ -134,20 +130,25 @@ namespace WesalApi
             builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
             builder.Services.AddScoped<IPostRepository, PostRepository>();
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+            builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<ILikeRepository, LikeRepository>();
 
             builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IPostService, PostService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<ILikeService, LikeService>();
+            builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+            builder.Services.AddScoped<ISearchService, SearchService>();
             builder.Services.AddScoped<ITokenService, TokenService>();
 
+
+            builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+            builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend",
                     policy => policy.WithOrigins("http://127.0.0.1:3000"
-                    //http://192.168.137.1:8080/
         )
                                     .AllowAnyHeader()
                                     .AllowAnyMethod());

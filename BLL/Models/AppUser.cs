@@ -8,9 +8,9 @@ public partial class AppUser : IdentityUser
 
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
-    public virtual ICollection<FriendShipRequest> FriendShipRequestFromFriends { get; set; } = new List<FriendShipRequest>();
+    public virtual ICollection<FriendshipRequest> FriendshipRequestFromFriends { get; set; } = new List<FriendshipRequest>();
 
-    public virtual ICollection<FriendShipRequest> FriendShipRequestToFriends { get; set; } = new List<FriendShipRequest>();
+    public virtual ICollection<FriendshipRequest> FriendshipRequestToFriends { get; set; } = new List<FriendshipRequest>();
 
     public virtual ICollection<Like> Likes { get; set; } = new List<Like>();
 

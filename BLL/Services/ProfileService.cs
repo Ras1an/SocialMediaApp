@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Azure.Core;
+using BLL.Dtos.PostDto;
 using BLL.Interfaces;
 using BLL.Interfaces.Services;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +16,7 @@ using Wesal.Models;
 using WesalApi.Dtos.CountryDto;
 using WesalApi.Dtos.FriendRquestDto;
 using WesalApi.Dtos.ProfileDto;
+using WesalApi.Interfaces;
 
 namespace BLL.Services;
 
@@ -21,19 +24,41 @@ public class ProfileService : IProfileService
 {
     private readonly IProfileRepository _profileRepo;
     private readonly ILikeRepository _likeRepo;
+    private readonly ICommentRepository _commentRepo;
     private readonly IMapper _mapper;
 
-    public ProfileService(IProfileRepository profileRepo, ILikeRepository likeRepo, IMapper mapper)
+    public ProfileService(IProfileRepository profileRepo, ILikeRepository likeRepo, ICommentRepository commentRepo, IMapper mapper)
     {
         _profileRepo = profileRepo;
         _likeRepo = likeRepo;
+        _commentRepo = commentRepo;
         _mapper = mapper;
     }
 
-    public async Task<ProfileDto> GetProfileAsync(string userId){
-        var profile = await _profileRepo.GetProfileAsync(userId);
 
-        return _mapper.Map<ProfileDto>(profile);
+    public async Task<ProfileDto> GetProfileAsync(string currentUserId, string userId)
+    {
+        var profile = await _profileRepo.GetProfileAsync(userId);
+        if (profile == null)
+            return null;
+
+        var profileDto = _mapper.Map<ProfileDto>(profile);
+        if (currentUserId != userId && userId != null) {
+            var friendRequest = await _profileRepo.IsFriend(currentUserId, userId);
+
+
+            if (friendRequest == null)
+                profileDto.friendStatus = FriendStatus.NotFriend;
+          
+            else if (friendRequest.IsAccepted)
+                profileDto.friendStatus = FriendStatus.Friend;
+            else  
+                profileDto.friendStatus = (currentUserId == friendRequest.FromFriendId)? FriendStatus.PendingSent : FriendStatus.PendingReceived;
+
+        }
+
+        return profileDto;
+
     }
 
     public async Task<List<ProfileDto>> GetAllFriendsAsync(string userId) {
@@ -73,13 +98,13 @@ public class ProfileService : IProfileService
         return _mapper.Map<List<ProfileDto>>(profiles);
     }
     public async Task<FriendRequestDto> SendFriendRequestAsync(string fromFriendId, string toFriendId) {
-        var friendShipRequest = new FriendShipRequest
+        var friendshipRequest = new FriendshipRequest
         {
             FromFriendId = fromFriendId,
             ToFriendId = toFriendId
         };
 
-        var friendRequest = await _profileRepo.SendFriendShipRequest(friendShipRequest);
+        var friendRequest = await _profileRepo.SendFriendshipRequest(friendshipRequest);
 
         return _mapper.Map<FriendRequestDto>(friendRequest);
     }
@@ -87,7 +112,7 @@ public class ProfileService : IProfileService
 
     public async Task<FriendRequestDto> GetFriendRequestAsync(int friendshipId) {
 
-        var friendRequest = await _profileRepo.GetFriendShipRequest(friendshipId);
+        var friendRequest = await _profileRepo.GetFriendshipRequest(friendshipId);
 
         return _mapper.Map<FriendRequestDto>(friendRequest);
 
@@ -103,7 +128,7 @@ public class ProfileService : IProfileService
 
 
     //public async Task<List<FriendRequestDto>> GetFriendRequestsAsync(string userId) {
-    //    var friendRequests = await _profileRepo.GetFriendShipRequests(userId);
+    //    var friendRequests = await _profileRepo.GetFriendshipRequests(userId);
 
     //    return _mapper.Map<List<FriendRequestDto>>(friendRequests);
     //}
@@ -117,13 +142,98 @@ public class ProfileService : IProfileService
 
         return _mapper.Map<List<ProfileDto>>(suggestedFriends);
     }
-    public async Task<List<PostDto>> GetTimelineAsync(string userId, int page, int pageSize) { 
+
+    public async Task<bool> ChangeNameAsync(string userId, string name)
+    {
+        var profile = await _profileRepo.GetProfileAsync(userId); 
+
+        if(profile != null) { 
+            profile.Name = name;
+            await _profileRepo.SaveAsync();
+            return true;
+        }
+
+        return false;
+    }
+    public async Task<List<PostDto>> GetTimelineReleventAsync(string userId, int page, int pageSize)
+    {
+        var posts = await _profileRepo.GetTimeLineRelevent(userId, page, pageSize);
+        if (posts.Count == 0)
+            return new List<PostDto>();
+
+        var mappedposts = _mapper.Map<List<PostDto>>(posts);
+
+
+        var postIds = mappedposts.Select(p => p.postId).ToList();
+        var likedPosts = await _likeRepo.IsLiked(userId, postIds);
+
+        foreach (var post in mappedposts)
+        {
+            post.isLiked = likedPosts.Contains(post.postId);
+        }
+
+        return mappedposts;
+
+    }
+
+
+    /*
+    public async Task<List<PostDto>> GetTimelineAsync(string userId, int page, int pageSize)
+    {
         var posts = await _profileRepo.GetTimeline(userId, page, pageSize);
         var mappedposts = _mapper.Map<List<PostDto>>(posts);
 
         foreach (var post in mappedposts)
         {
             post.isLiked = await _likeRepo.IsLiked(userId, post.postId);
+        }
+
+        return mappedposts;
+    }
+
+    */
+
+    public async Task<List<PostDto>> GetTimelineAsync(string userId, int page, int pageSize)
+    {
+        var posts = await _profileRepo.GetTimeline(userId, page, pageSize);
+        if (posts.Count == 0)
+            return new List<PostDto>();
+        var mappedposts = _mapper.Map<List<PostDto>>(posts);
+
+        var postIds = mappedposts.Select(p => p.postId).ToList();
+
+        var likedPosts = await _likeRepo.IsLiked(userId, postIds);
+        var likesCount = await _likeRepo.GetLikesCounts(postIds);
+        var commentsCount = await _commentRepo.GetCommentsCount(postIds);
+
+        foreach(var post in mappedposts)
+        {
+            post.likesCount = likesCount.TryGetValue(post.postId, out var lc) ? lc : 0;
+            post.commentsCount = commentsCount.TryGetValue(post.postId, out var cc) ? cc : 0;
+            post.isLiked = likedPosts.Contains(post.postId);
+        }
+
+        return mappedposts;
+    }
+
+
+
+    public async Task<List<PostDto>> GetRandomTimelineAsync(string userId, int pageSize)
+    {
+        var posts = await _profileRepo.GetRandomTimeline(pageSize);
+        var mappedposts = _mapper.Map<List<PostDto>>(posts);
+
+        var postIds = mappedposts.Select(p => p.postId).ToList();
+
+        var likedPosts = await _likeRepo.IsLiked(userId, postIds);
+        var likesCount = await _likeRepo.GetLikesCounts(postIds);
+        var commentsCount = await _commentRepo.GetCommentsCount(postIds);
+
+        foreach (var post in mappedposts)
+        {
+            post.likesCount = likesCount.TryGetValue(post.postId, out var lc) ? lc : 0;
+            post.commentsCount = commentsCount.TryGetValue(post.postId, out var cc) ? cc : 0;
+            post.isLiked = likedPosts.Contains(post.postId);
         }
 
         return mappedposts;
@@ -140,5 +250,7 @@ public class ProfileService : IProfileService
 
         return _mapper.Map<List<CityDto>>(cities);
     }
+
+    
 }
 

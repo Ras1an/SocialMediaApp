@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Wesal.Models;
 
-public partial class FriendShipRequest
+public partial class FriendshipRequest
 {
-    public int FriendShipRequestId { get; set; }
+    public int FriendshipRequestId { get; set; }
 
     public string FromFriendId { get; set; }
 
@@ -19,4 +19,12 @@ public partial class FriendShipRequest
 
     public virtual AppUser ToFriend { get; set; } = null!;
 
+}
+
+
+public enum FriendshipResult
+{
+    NotFound,
+    AlreadyAccepted,
+    Accepted
 }

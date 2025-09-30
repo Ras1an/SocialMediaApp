@@ -12,9 +12,9 @@ public class PostDto
     public string postText { get; set; }
     public string postPhoto { get; set; }
     public DateTime? createdAt { get; set; }
-    public bool? isLiked { get; set; }
-    public List<GetCommentDto> comments { get; set; }
+    public bool isLiked { get; set; }
 
-    public List<LikeDto> likes { get; set; }
+    public int commentsCount { get; set; }
+    public int likesCount { get; set; }
 
 }

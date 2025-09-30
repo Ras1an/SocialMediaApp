@@ -54,5 +54,12 @@ public class CommentService : ICommentService
         var deleted = await _commentRepo.DeleteComment(commentId);
         return _mapper.Map<CommentDto>(deleted);
     }
+
+    public async Task<List<GetCommentDto>> GetPostCommentsAsync(int postId, int page, int pageSize)
+    {
+        var comments = await _commentRepo.GetPostComments(postId, page, pageSize);
+
+        return _mapper.Map<List<GetCommentDto>>(comments);
+    }
 }
 

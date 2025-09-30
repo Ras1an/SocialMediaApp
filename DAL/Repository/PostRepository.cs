@@ -20,12 +20,12 @@ public class PostRepository : IPostRepository
 
     public async Task<List<Post>> GetAllPosts(string userId)
     {
-
-
-        var posts = await _context.Posts.Where(p => p.AppUserId == userId).Include(p => p.AppUser.Profiles).Include(p => p.Comments).ThenInclude(c => c.AppUser.Profiles).Include(p => p.Likes).ThenInclude(l => l.AppUser.Profiles).AsNoTracking().OrderByDescending(p => p.CreatedAt).ToListAsync();
+        var posts = await _context.Posts.Where(p => p.AppUserId == userId).Include(p => p.AppUser.Profiles).OrderByDescending(p => p.CreatedAt).ToListAsync();
 
         return posts;
     }
+
+    
 
 
     public async Task<Post> CreatePost(Post post)
@@ -70,5 +70,12 @@ public class PostRepository : IPostRepository
         return posts;
     }
 
+    public async Task<List<Post>> SearchPosts(string target, int page, int pageSize)
+    {
+        var posts = await _context.Posts.Where(p => p.PostText.Contains(target))
+            .OrderByDescending(p => p.PostText == target).ThenByDescending(p => p.PostText.StartsWith(target)).ThenBy(p => p.PostText.IndexOf(target)).ThenBy(p => p.PostText.Length)
+            .Skip((page - 1) * pageSize).Take(pageSize).Include(p => p.AppUser.Profiles).ToListAsync();
 
+        return posts;
+    }
 }

@@ -152,5 +152,16 @@ public class CommentController : MainController
 
     }
 
+
+    [Authorize]
+    [HttpGet("GetPostComments")]
+    public async Task<IActionResult> GetPostComments(int postId, int page, int pageSize)
+    {
+        var comments = await _commentService.GetPostCommentsAsync(postId, page, pageSize);
+
+
+        return Ok(comments);
+    }
+
 }
 

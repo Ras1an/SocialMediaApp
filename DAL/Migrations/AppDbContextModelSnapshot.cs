@@ -294,13 +294,13 @@ namespace WesalApi.Migrations
                     b.ToTable("Countries");
                 });
 
-            modelBuilder.Entity("Wesal.Models.FriendShipRequest", b =>
+            modelBuilder.Entity("Wesal.Models.FriendshipRequest", b =>
                 {
-                    b.Property<int>("FriendShipRequestId")
+                    b.Property<int>("FriendshipRequestId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FriendShipRequestId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FriendshipRequestId"));
 
                     b.Property<string>("FromFriendId")
                         .IsRequired()
@@ -320,13 +320,13 @@ namespace WesalApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("FriendShipRequestId");
+                    b.HasKey("FriendshipRequestId");
 
                     b.HasIndex("FromFriendId");
 
                     b.HasIndex("ToFriendId");
 
-                    b.ToTable("FriendShipRequests");
+                    b.ToTable("FriendshipRequests");
                 });
 
             modelBuilder.Entity("Wesal.Models.Like", b =>
@@ -516,15 +516,15 @@ namespace WesalApi.Migrations
                     b.Navigation("Post");
                 });
 
-            modelBuilder.Entity("Wesal.Models.FriendShipRequest", b =>
+            modelBuilder.Entity("Wesal.Models.FriendshipRequest", b =>
                 {
                     b.HasOne("Wesal.Models.AppUser", "FromFriend")
-                        .WithMany("FriendShipRequestFromFriends")
+                        .WithMany("FriendshipRequestFromFriends")
                         .HasForeignKey("FromFriendId")
                         .IsRequired();
 
                     b.HasOne("Wesal.Models.AppUser", "ToFriend")
-                        .WithMany("FriendShipRequestToFriends")
+                        .WithMany("FriendshipRequestToFriends")
                         .HasForeignKey("ToFriendId")
                         .IsRequired();
 
@@ -586,9 +586,9 @@ namespace WesalApi.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("FriendShipRequestFromFriends");
+                    b.Navigation("FriendshipRequestFromFriends");
 
-                    b.Navigation("FriendShipRequestToFriends");
+                    b.Navigation("FriendshipRequestToFriends");
 
                     b.Navigation("Likes");
 

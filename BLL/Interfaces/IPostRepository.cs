@@ -14,4 +14,6 @@ public interface IPostRepository
     Task<List<Post>> SearchPost(string target, int page, int pageSize);
     Task DeletePost(int postId);
 
+    Task<List<Post>> SearchPosts(string target, int page, int pageSize);
+
 }

@@ -14,7 +14,7 @@ namespace Wesal.Data
         public virtual DbSet<City> Cities { get; set; }
         public virtual DbSet<Comment> Comments { get; set; }
         public virtual DbSet<Country> Countries { get; set; }
-        public virtual DbSet<FriendShipRequest> FriendShipRequests { get; set; }
+        public virtual DbSet<FriendshipRequest> FriendshipRequests { get; set; }
         public virtual DbSet<Like> Likes { get; set; }
         public virtual DbSet<Post> Posts { get; set; }
         public virtual DbSet<Profile> Profiles { get; set; }
@@ -56,19 +56,19 @@ namespace Wesal.Data
                 entity.Property(e => e.CountryName).HasMaxLength(100);
             });
 
-            modelBuilder.Entity<FriendShipRequest>(entity =>
+            modelBuilder.Entity<FriendshipRequest>(entity =>
             {
-                entity.HasKey(e => e.FriendShipRequestId);
+                entity.HasKey(e => e.FriendshipRequestId);
                 entity.Property(e => e.IsAccepted).HasDefaultValue(false);
                 entity.Property(e => e.RequestedAt)
                       .HasDefaultValueSql("(getdate())")
                       .HasColumnType("datetime");
 
-                entity.HasOne(d => d.FromFriend).WithMany(p => p.FriendShipRequestFromFriends)
+                entity.HasOne(d => d.FromFriend).WithMany(p => p.FriendshipRequestFromFriends)
                       .HasForeignKey(d => d.FromFriendId)
                       .OnDelete(DeleteBehavior.ClientSetNull);
 
-                entity.HasOne(d => d.ToFriend).WithMany(p => p.FriendShipRequestToFriends)
+                entity.HasOne(d => d.ToFriend).WithMany(p => p.FriendshipRequestToFriends)
                       .HasForeignKey(d => d.ToFriendId)
                       .OnDelete(DeleteBehavior.ClientSetNull);
             });
